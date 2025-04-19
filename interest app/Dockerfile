@@ -4,14 +4,20 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 # Set the working directory in the container
 WORKDIR /app
 
-# Copy the .csproj file from the subfolder and restore any dependencies
-COPY interest app/interest app.csproj ./interest app/
+# Copy the .csproj file from the subfolder into the container
+COPY interest app/interest app.csproj ./interest app/interest app.csproj
+
+# Change the working directory to the location of the .csproj file
 WORKDIR /app/interest app
+
+# Run dotnet restore to restore the dependencies
 RUN dotnet restore
 
-# Copy the entire project and build it
-COPY . ./
-RUN dotnet publish interest app/interest app.csproj -c Release -o /app/publish
+# Copy the rest of the project files into the container
+COPY interest app/. ./interest app/
+
+# Build and publish the project
+RUN dotnet publish interest app.csproj -c Release -o /app/publish
 
 # Use the official image for ASP.NET Core runtime for the final image
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
@@ -26,4 +32,5 @@ COPY --from=build /app/publish .
 EXPOSE 80
 
 # Start the application
-ENTRYPOINT ["dotnet", "interest app/interest app.dll"]
+ENTRYPOINT ["dotnet", "interest app.dll"]
+
